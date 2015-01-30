@@ -230,7 +230,7 @@ public class AudioHandler extends CordovaPlugin {
             final Map<String, String> headers = jsonObjectToStringMap(this.headers);
             ret.setHeaders(headers);
             } catch (JSONException exception) {
-                Log.d(LOG_TAG, "JSONException: " + exception.getMessage());
+                Log.d(TAG, "JSONException: " + exception.getMessage());
             }
 
             players.put(id, ret);
