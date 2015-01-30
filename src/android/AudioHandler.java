@@ -238,7 +238,7 @@ public class AudioHandler extends CordovaPlugin {
         Iterator<String> keysItr = object.keys();
         while(keysItr.hasNext()) {
             String key = keysItr.next();
-            String value = object.get(key);
+            String value = object.get(key).toString();
 
             map.put(key, value);
         }
