@@ -225,8 +225,14 @@ public class AudioHandler extends CordovaPlugin {
             }
             Context context = this.cordova.getActivity().getApplicationContext();
             ret = new AudioPlayer(this, id, file, context);
+
+            try {
             final Map<String, String> headers = jsonObjectToStringMap(this.headers);
             ret.setHeaders(headers);
+            } catch (JSONException exception) {
+                Log.d("JSONException: " + exception.getMessage());
+            }
+
             players.put(id, ret);
         }
         return ret;
