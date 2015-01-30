@@ -246,6 +246,7 @@ public class AudioHandler extends CordovaPlugin {
             String key = keysItr.next();
             String value = object.get(key).toString();
 
+            Log.d(TAG, "key: " + key + ", value=" + value);
             map.put(key, value);
         }
         return map;
