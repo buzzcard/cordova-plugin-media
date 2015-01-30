@@ -240,7 +240,7 @@ public class AudioHandler extends CordovaPlugin {
             String key = keysItr.next();
             Object value = object.get(key);
 
-            else if(value instanceof JSONObject) {
+            if(value instanceof JSONObject) {
                 value = jsonObjectToMap((JSONObject) value);
             }
             map.put(key, value);
