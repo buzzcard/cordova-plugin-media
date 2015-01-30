@@ -18,14 +18,17 @@
 */
 package org.apache.cordova.media;
 
+import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
+import android.webkit.CookieManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,6 +36,10 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class implements the audio playback and recording capabilities used by Cordova.
@@ -87,17 +94,22 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
     private boolean prepareOnly = true;     // playback after file prepare flag
     private int seekOnPrepared = 0;     // seek to this location once media is prepared
 
+    private Context context = null;
+    private Map<String, String> headers = null;
+
     /**
      * Constructor.
      *
      * @param handler           The audio handler object
      * @param id                The id of this audio player
      */
-    public AudioPlayer(AudioHandler handler, String id, String file) {
+    public AudioPlayer(AudioHandler handler, String id, String file, Context context) {
         this.handler = handler;
         this.id = id;
         this.audioFile = file;
         this.recorder = new MediaRecorder();
+
+        this.context = context;
 
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
             this.tempFile = Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmprecording.3gp";
@@ -105,6 +117,10 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             this.tempFile = "/data/data/" + handler.cordova.getActivity().getPackageName() + "/cache/tmprecording.3gp";
         }
 
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
     }
 
     /**
@@ -475,6 +491,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                     try {
                         this.loadAudioFile(file);
                     } catch (Exception e) {
+                        Log.d(LOG_TAG, e.getMessage());
                         sendErrorStatus(MEDIA_ERR_ABORTED);
                     }
                     return false;
@@ -500,6 +517,7 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
                         try {
                             this.loadAudioFile(file);
                         } catch (Exception e) {
+                            Log.d(LOG_TAG, e.getMessage());
                             sendErrorStatus(MEDIA_ERR_ABORTED);
                         }
                         //if we had to prepare the file, we won't be in the correct state for playback
@@ -521,10 +539,34 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
      * @throws IllegalArgumentException
      */
     private void loadAudioFile(String file) throws IllegalArgumentException, SecurityException, IllegalStateException, IOException {
+        Log.d(LOG_TAG, "loadAudioFile(" + file + ") called");
         if (this.isStreaming(file)) {
+
+
+            /*
+               Try to call the setDataSource method with reflection to include the cookie header.
+               Catch NoSuchMethodException, IllegalAccessException, InvocationTargetException should not happen.
+               setDataSource(context, uri,map) has existed since 2.2, however was marked hidden.
+               Since API 14, the call has been made public.
+               However if those exception are thrown, then fall back to old Cordova way of doing things.
+             */
+            try {
+                Uri uri = Uri.parse(file);
+                // Use java reflection call the hidden API:
+                Method method = this.player.getClass().getMethod("setDataSource", new Class[]{Context.class, Uri.class, Map.class});
+                method.invoke(this.player, new Object[]{this.context, uri, this.headers});
+            } catch (IllegalAccessException exception) {
+                Log.d(LOG_TAG, "IllegalAccessException: " + exception.getMessage());
+                this.player.setDataSource(file);
+            } catch (InvocationTargetException exception) {
+                Log.d(LOG_TAG, "InvocationTargetException: " + exception.getMessage());
             this.player.setDataSource(file);
+            }  catch (NoSuchMethodException exception) {
+                Log.d(LOG_TAG, "NoSuchMethodException: " + exception.getMessage());
+                this.player.setDataSource(file);
+            }
+
             this.player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            //if it's a streaming file, play mode is implied
             this.setMode(MODE.PLAY);
             this.setState(STATE.MEDIA_STARTING);
             this.player.setOnPreparedListener(this);

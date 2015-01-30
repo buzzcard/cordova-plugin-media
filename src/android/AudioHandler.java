@@ -55,6 +55,8 @@ public class AudioHandler extends CordovaPlugin {
     private int origVolumeStream = -1;
     private CallbackContext messageChannel;
 
+    private JSONObject headers = null;
+
     /**
      * Constructor.
      */
@@ -92,6 +94,10 @@ public class AudioHandler extends CordovaPlugin {
         else if (action.equals("startPlayingAudio")) {
             String target = args.getString(1);
             String fileUriStr;
+
+            final JSONObject options = args.optJSONObject(2) == null ? new JSONObject() : args.optJSONObject(2);
+            this.headers = options.optJSONObject("headers");
+
             try {
                 Uri targetUri = resourceApi.remapUri(Uri.parse(target));
                 fileUriStr = targetUri.toString();
@@ -214,10 +220,33 @@ public class AudioHandler extends CordovaPlugin {
             if (players.isEmpty()) {
                 onFirstPlayerCreated();
             }
-            ret = new AudioPlayer(this, id, file);
+            Context context = this.cordova.getActivity().getApplicationContext();
+            ret = new AudioPlayer(this, id, file, context);
+            final Map<String, String> headers = jsonObjectToMap(this.headers);
+            ret.setHeaders(headers);
             players.put(id, ret);
         }
         return ret;
+    }
+
+    public static Map<String, String> jsonObjectToMap(JSONObject object) throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+
+        Iterator<String> keysItr = object.keys();
+        while(keysItr.hasNext()) {
+            String key = keysItr.next();
+            Object value = object.get(key);
+
+            if(value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            }
+
+            else if(value instanceof JSONObject) {
+                value = jsonObjectToMap((JSONObject) value);
+            }
+            map.put(key, value);
+        }
+        return map;
     }
 
     /**
