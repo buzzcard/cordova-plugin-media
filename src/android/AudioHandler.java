@@ -34,7 +34,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * This class called by CordovaActivity to play and record audio.
@@ -236,10 +239,6 @@ public class AudioHandler extends CordovaPlugin {
         while(keysItr.hasNext()) {
             String key = keysItr.next();
             Object value = object.get(key);
-
-            if(value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            }
 
             else if(value instanceof JSONObject) {
                 value = jsonObjectToMap((JSONObject) value);
