@@ -553,6 +553,10 @@ public class AudioPlayer implements OnCompletionListener, OnPreparedListener, On
             try {
                 Uri uri = Uri.parse(file);
                 // Use java reflection call the hidden API:
+                for (Map.Entry<String, String> entry : this.headers.entrySet()) {
+                    Log.d(LOG_TAG, "Setting header " + entry.getKey() + " -> " + entry.getValue());
+                }
+
                 Method method = this.player.getClass().getMethod("setDataSource", new Class[]{Context.class, Uri.class, Map.class});
                 method.invoke(this.player, new Object[]{this.context, uri, this.headers});
             } catch (IllegalAccessException exception) {
