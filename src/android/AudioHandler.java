@@ -232,17 +232,14 @@ public class AudioHandler extends CordovaPlugin {
         return ret;
     }
 
-    public static Map<String, String> jsonObjectToMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<String, Object>();
+    public static Map<String, String> jsonObjectToStringMap(JSONObject object) throws JSONException {
+        Map<String, String> map = new HashMap<String, String>();
 
         Iterator<String> keysItr = object.keys();
         while(keysItr.hasNext()) {
             String key = keysItr.next();
-            Object value = object.get(key);
+            String value = object.get(key);
 
-            if(value instanceof JSONObject) {
-                value = jsonObjectToMap((JSONObject) value);
-            }
             map.put(key, value);
         }
         return map;
